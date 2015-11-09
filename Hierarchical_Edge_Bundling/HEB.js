@@ -4,11 +4,19 @@ var treenodes = [];
 var interval;
 var radius = 400;
 var paths = [];
+var _paths = [];
 var beta = 0.7;
 var number = 0;
 
 
 var mySvg = document.getElementById('mySvg');
+var _beat = document.getElementById('beta');
+
+_beat.addEventListener("mousedown", function (event) {
+    beta = _beat.value / 100;
+    console.log(beta);
+    ReDraw();
+}, false);
 
 function Initialize() {
 
@@ -402,7 +410,7 @@ function Draw(d) {
             path.setAttribute("fill", "none");
             path.setAttribute("stroke", "#1f77b4");
             path.setAttribute("stroke-opacity", 0.4);
-
+            _paths.push(path);
             mySvg.appendChild(path);
 
             k++;
@@ -519,4 +527,16 @@ function Draw1() {
         mySvg.appendChild(text);
     }
     
+}
+
+function ReDraw() {
+    var l = _paths.length;
+    for (var i = 0; i < l; i++) {
+            var _path = Fix(paths[i]);
+            var str = DrawLine(_path);
+            _paths[i].setAttribute("d", str);
+            _paths[i].setAttribute("fill", "none");
+            _paths[i].setAttribute("stroke", "#1f77b4");
+            _paths[i].setAttribute("stroke-opacity", 0.4);
+    }
 }
