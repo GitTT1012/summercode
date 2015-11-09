@@ -12,7 +12,7 @@ var number = 0;
 var mySvg = document.getElementById('mySvg');
 var _beat = document.getElementById('beta');
 
-_beat.addEventListener("mousedown", function (event) {
+_beat.addEventListener("mouseup", function (event) {
     beta = _beat.value / 100;
     console.log(beta);
     ReDraw();

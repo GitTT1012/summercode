@@ -1,11 +1,11 @@
 ﻿var omega = 0,
     Width = 800,
     Height = 600,
-    speed = 10,  //1~20即可表示速度范围，未证明
+    speed = 5,  //1~20即可表示速度范围，未证明
     gears = [],
-    mySvg = document.getElementById("drawing");
-mySvg.setAttribute("width", Width);
-mySvg.setAttribute("height", Height);
+    mySvg = document.getElementById("drawing"),
+    _speed = document.getElementById("button");
+
 
 function DrawGear(N, Radius, Position) {
     var path = document.createElementNS("http://www.w3.org/2000/svg", "path"),
@@ -81,6 +81,8 @@ function Rotate() {
 
 function Layout() {
     var d = 13.70;
+    mySvg.setAttribute("width", Width);
+    mySvg.setAttribute("height", Height);
     var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circle.setAttribute("cx", Width / 2);
     circle.setAttribute("cy", Height / 2);
@@ -98,4 +100,9 @@ function Layout() {
     DrawGear(20, 100, { x: Width / 2 - (150 + d) * Math.cos(Math.PI / 6), y: Height / 2 + (150 + d) * Math.sin(Math.PI / 6) });
     DrawGear(20, 100, { x: Width / 2, y: Height / 2 - (150 + d) });
     Rotate();
+    _speed.addEventListener("mouseup", function (event) {
+        omega = 0;
+        speed = Math.round(_speed.value);
+        console.log(speed);
+    }, false);
 }
