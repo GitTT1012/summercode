@@ -3,14 +3,28 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Parallel Coordinates</title>
-	<meta charset="utf-8" />
+    <meta charset="utf-8" />
     <script type="text/javascript" src="d3.js"></script>
+    <script type="text/javascript" src="PC.js"></script>
+    <style type="text/css">
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: sans-serif;
+            font-size: 10px;
+        }
+        body {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
 </head>
-<body>
-    <svg id="drawing"></svg>
-    <script type="text/javascript" src="ParallelCoordinates.js"></script>
-    <script type="text/javascript">
-        Layout();
-    </script>
+<body onselectstart ="return false" style="cursor:crosshair">
+    <div id="container"></div>
 </body>
 </html>
