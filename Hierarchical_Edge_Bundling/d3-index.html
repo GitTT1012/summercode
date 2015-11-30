@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Hieraichical Edge Bundling</title>
+	<style type="text/css">
+		.node {
+			font: 300 11px "Helvetica Neue", Helvetica, Arial, sans-serif;			
+			fill: #bbb;
+		}
+
+		.link {
+			stroke: steelblue;
+			stroke-opacity: .4;
+			fill: none;
+		}
+	</style>
+</head>
+<body>
+	<h1>Hieraichical Edge Bundling Demo</h1>
+	<div>
+		<h3>Beta Control<input type="range" min=0 max=100 value=85 /></h3>
+		<h3>Filter Parent Nodes <button>Change</button></h3>
+	</div>
+<script type="text/javascript" src="d3.js"></script>
+<script type="text/javascript" src="ex.js"></script>
+<script type="text/javascript">
+	//Bundling use a bund of B-spline to represent adjacacant information
+	var isRange = false,
+		isClicked = false,
+		beta = 0.85,  //control tension of a bund of lines
+		diameter = 960,
+		radius = diameter / 2,
+		innerRadius = radius - 120;
+	//Initialize cluster layout function
+	var cluster = d3.layout.cluster()
+		.size([360, innerRadius])
+		.sort(null)
+		.value(function(d) { return d.size; });
+	//Initialize bundle layout function
+	var bundle = d3.layout.bundle();
+	//Set up Bundle line generator
+	var line = d3.svg.line.radial()
+		.interpolate('bundle')
+		.tension(beta)
+		//The cluster creates nodes in radial coordinates
+		.radius(function(d) { return d.y; })
+		.angle(function(d) { return d.x / 180 * Math.PI; });
+	//Set up svg container
+	var mySvg = d3.select('body')
+		.append('svg')
+		.attr({
+			width: diameter,
+			height: diameter,
+		})
+		.append('g')
+		.attr('transform', 'translate(' + radius + ', ' + radius + ')');
+	//Load data
+	d3.json('flare-import.json', function(error, classes) {
+		if(error) throw error;
+		//Use layout functions to generate nodes and links
+		var nodes = cluster.nodes(packageHierarchy(classes)),
+			links = packageImports(nodes);
+		//Draw elements via svg
+		var link = mySvg.append('g')
+			.selectAll('.link')
+			.data(bundle(links))
+			.enter().append('path')
+			.each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+			.attr('class', 'link')
+			.attr('d', line);
+		var node = mySvg.append('g')
+			.selectAll('.node')
+			.data(nodes)
+			.enter().append('text')
+			.attr('class', 'node')
+			.text(function(d) { return d.key; })
+			.attr({
+				x: function(d) { return d.y * Math.cos(d.x * Math.PI / 180); },
+				y: function(d) { return d.y * Math.sin(d.x * Math.PI / 180); },
+			})
+			.attr('dy', '0.31em')
+			.attr("transform", function(d) {
+				var x = d.y * Math.cos(d.x * Math.PI / 180),
+					y = d.y * Math.sin(d.x * Math.PI / 180);
+				if(d.x < 90 || d.x > 270){
+					return "translate(" + x + ", " + y + ")rotate(" + d.x + ")translate(" + (-x) + ", " + (-y) + ")";
+				} else {
+					return "translate(" + x + ", " + y + ")rotate(" + (d.x + 180) + ")translate(" + (-x) + ", " + (-y) + ")";
+				}
+				
+			})
+			.style('text-align', 'middle')
+			.style('text-anchor', function(d) {
+				if(d.x < 90 || d.x > 270){
+					return 'start';
+				} else {
+					return 'end';
+				}
+			});
+		//Adjust parameter via control panel
+		//Beta control
+		var _input = document.getElementsByTagName('input')[0];
+		_input.addEventListener('mousedown', function() {
+			isRange = true;
+		}, false);
+		_input.addEventListener('mousemove', function() {
+			if(isRange){
+				beta = _input.value / 100;
+				//Reset line generator
+				line.tension(beta);
+				//Redraw links
+				link.attr('d', line);
+
+			}
+		}, false);
+		_input.addEventListener('mouseup', function() {
+			if(isRange){
+				isRange = false;
+			}
+		}, false);
+		//Filter button control
+		var _button = document.getElementsByTagName('button')[0];
+		_button.addEventListener('click', function() {
+			isClicked = isClicked === true ? false : true;
+			if(isClicked){
+				node.remove();
+		node = mySvg.append('g')
+			.selectAll('.node')
+			.data(nodes.filter(function(n) { return !n.children; }))
+			.enter().append('text')
+			.attr('class', 'node')
+			.text(function(d) { return d.key; })
+			.attr({
+				x: function(d) { return d.y * Math.cos(d.x * Math.PI / 180); },
+				y: function(d) { return d.y * Math.sin(d.x * Math.PI / 180); },
+			})
+			.attr('dy', '0.31em')
+			.attr("transform", function(d) {
+				var x = d.y * Math.cos(d.x * Math.PI / 180),
+					y = d.y * Math.sin(d.x * Math.PI / 180);
+				if(d.x < 90 || d.x > 270){
+					return "translate(" + x + ", " + y + ")rotate(" + d.x + ")translate(" + (-x) + ", " + (-y) + ")";
+				} else {
+					return "translate(" + x + ", " + y + ")rotate(" + (d.x + 180) + ")translate(" + (-x) + ", " + (-y) + ")";
+				}
+				
+			})
+			.style('text-align', 'middle')
+			.style('text-anchor', function(d) {
+				if(d.x < 90 || d.x > 270){
+					return 'start';
+				} else {
+					return 'end';
+				}
+			});
+			} else {
+				node.remove();
+		node = mySvg.append('g')
+			.selectAll('.node')
+			.data(nodes)
+			.enter().append('text')
+			.attr('class', 'node')
+			.text(function(d) { return d.key; })
+			.attr({
+				x: function(d) { return d.y * Math.cos(d.x * Math.PI / 180); },
+				y: function(d) { return d.y * Math.sin(d.x * Math.PI / 180); },
+			})
+			.attr('dy', '0.31em')
+			.attr("transform", function(d) {
+				var x = d.y * Math.cos(d.x * Math.PI / 180),
+					y = d.y * Math.sin(d.x * Math.PI / 180);
+				if(d.x < 90 || d.x > 270){
+					return "translate(" + x + ", " + y + ")rotate(" + d.x + ")translate(" + (-x) + ", " + (-y) + ")";
+				} else {
+					return "translate(" + x + ", " + y + ")rotate(" + (d.x + 180) + ")translate(" + (-x) + ", " + (-y) + ")";
+				}
+				
+			})
+			.style('text-align', 'middle')
+			.style('text-anchor', function(d) {
+				if(d.x < 90 || d.x > 270){
+					return 'start';
+				} else {
+					return 'end';
+				}
+			});
+			}
+		}, false);
+	});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Force-directed Layout</title>
+	<style type="text/css">
+
+		.links {
+			stroke: #ccc;
+			stroke-width: 1;
+		}
+
+		div {
+			border: 2px solid;
+			border-radius: 25px;
+			-moz-border-radius: 25px; /* Old Firefox */
+			height: 200px;
+		}
+
+		h2 {
+			margin-left: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Force-directed Layout Demo</h1>
+	<div id="control_panel">
+		<h2>Change Spring Force</h2>
+		<input type="range" id="aforce" min="50" max="500" value="50" />
+		<h2>Change Charge Force</h2>
+		<input type="range" id="bforce" min="100" max="2000" value="50" />
+	</div>
+	<script type="text/javascript" src="d3.js"></script>
+	<script type="text/javascript">
+	//Force-directed layouts are so-called because they use simulations of physical forces to arrange elements on the screen. D3's force layout expects users to provide nodes and edges seperately, as an array of objects.
+	var isChange = false;
+	var dataset = {
+		nodes: [
+			{ name: "Adam" },
+			{ name: "Bob" },
+			{ name: "Carrie" },
+			{ name: "Donova" },
+			{ name: "Edward" },
+			{ name: "Felicity" },
+			{ name: "George" },
+			{ name: "Hannah" },
+			{ name: "Iris" },
+			{ name: "Jerry" },
+		],
+		edges: [
+			{ source: 0, target: 1 },
+			{ source: 0, target: 2 },
+			{ source: 0, target: 3 },
+			{ source: 0, target: 4 },
+			{ source: 1, target: 5 },
+			{ source: 2, target: 5 },
+			{ source: 3, target: 4 },
+			{ source: 5, target: 8 },
+			{ source: 5, target: 9 },
+			{ source: 6, target: 7 },
+			{ source: 7, target: 8 },
+			{ source: 8, target: 9 },
+		],
+	};
+	//Create svg container
+	var w = window.screen.width,
+		h = 750;
+	var mySvg = d3.select('body')
+		.append('svg')
+		.attr({
+			width: w,
+			height: h,
+		});
+	//Easy color accessible vis a 10-step scale
+	var colors = d3.scale.category10();
+	//Initialize force-directed layout function
+	var ATTRACTION_FORCE = document.getElementsByTagName('input')[0].value,
+		REPULSION_FORCE = document.getElementsByTagName('input')[1].value;
+	var force = d3.layout.force()
+		.nodes(dataset.nodes)
+		.links(dataset.edges)
+		.size([w, h])
+		.linkDistance([ATTRACTION_FORCE])  //Spring force simulation
+		.charge([-1 * REPULSION_FORCE])		 //Charge force simulation
+		.start();
+	//Create svg line for each edge
+	var edges = mySvg.selectAll('.links')
+		.data(dataset.edges)
+		.enter().append('line')
+		.attr("class", "links");
+	//Create svg cirlce for each node
+	var nodes = mySvg.selectAll('circle')
+		.data(dataset.nodes)
+		.enter().append('circle')
+		.attr("r", 25)
+		.style("fill", function(d, i) {
+			return colors(i);
+		})
+		.style("stroke", "white")
+		.call(force.drag);
+	//force layout "ticks" forward through time
+	force.on("tick", function() {
+		//Place edges according to nodes
+		edges.attr({
+			x1: function(d) { return d.source.x; },
+			y1: function(d) { return d.source.y; },
+			x2: function(d) { return d.target.x; },
+			y2: function(d) { return d.target.y; },
+		});
+		//Replace ndoes according to user's mouse
+		nodes.attr({
+			cx: function(d) { return d.x; },
+			cy: function(d) { return d.y; },
+		});
+	});
+	//Control physical constants
+	document.getElementsByTagName('input')[0].addEventListener('mousedown', function() {
+		isChange = true;
+	}, false);
+	document.getElementsByTagName('input')[0].addEventListener('mousemove', function() {
+		if(isChange){
+			ATTRACTION_FORCE = document.getElementsByTagName('input')[0].value;
+		}
+	}, false);
+
+	document.getElementsByTagName('div')[0].addEventListener('mouseup', function() {
+		if(isChange){
+			isChange = false;
+			edges.remove();
+			nodes.remove();
+			layout();			
+		}
+	}, false);
+
+	document.getElementsByTagName('input')[1].addEventListener('mousedown', function() {
+		isChange = true;
+	}, false);
+	document.getElementsByTagName('input')[1].addEventListener('mousemove', function() {
+		if(isChange){
+			REPULSION_FORCE = document.getElementsByTagName('input')[0].value;
+		}
+	}, false);
+
+	var layout = function() {
+	//Redraw the force layout after physical constants changes
+	var force = d3.layout.force()
+		.nodes(dataset.nodes)
+		.links(dataset.edges)
+		.size([w, h])
+		.linkDistance([ATTRACTION_FORCE])  //Spring force simulation
+		.charge([-1 * REPULSION_FORCE])		 //Charge force simulation
+		.start();
+	//Create svg line for each edge
+	var edges = mySvg.selectAll('.links')
+		.data(dataset.edges)
+		.enter().append('line')
+		.attr("class", "links");
+	//Create svg cirlce for each node
+	var nodes = mySvg.selectAll('circle')
+		.data(dataset.nodes)
+		.enter().append('circle')
+		.attr("r", 25)
+		.style("fill", function(d, i) {
+			return colors(i);
+		})
+		.style("stroke", "white")
+		.call(force.drag);
+	//force layout "ticks" forward through time
+	force.on("tick", function() {
+		//Place edges according to nodes
+		edges.attr({
+			x1: function(d) { return d.source.x; },
+			y1: function(d) { return d.source.y; },
+			x2: function(d) { return d.target.x; },
+			y2: function(d) { return d.target.y; },
+		});
+		//Replace ndoes according to user's mouse
+		nodes.attr({
+			cx: function(d) { return d.x; },
+			cy: function(d) { return d.y; },
+		});
+	});	
+	}
+	</script>
+
+</body>
+</html>

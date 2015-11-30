@@ -1,86 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<style>
-
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: auto;
-  position: relative;
-  width: 960px;
-}
-
-form {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-}
-
-.node {
-  border: solid 1px white;
-  font: 10px sans-serif;
-  line-height: 12px;
-  overflow: hidden;
-  position: absolute;
-  text-indent: 2px;
-}
-
-</style>
+	<meta charset="utf-8">
+	<title>TreeMap</title>
+	<style type="text/css">
+		.node {
+			fill: none;
+			stroke: blue;
+		}
+	</style>
 </head>
 <body>
-
-<script src="//d3js.org/d3.v3.min.js"></script>
-<script>
-
-var margin = {top: 40, right: 10, bottom: 10, left: 10},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-
-var color = d3.scale.category20c();
-
-var treemap = d3.layout.treemap()
-    .size([width, height])
-    .sticky(true)
-    .value(function(d) { return d.size; });
-
-var div = d3.select("body").append("div")
-    .style("position", "relative")
-    .style("width", (width + margin.left + margin.right) + "px")
-    .style("height", (height + margin.top + margin.bottom) + "px")
-    .style("left", margin.left + "px")
-    .style("top", margin.top + "px");
-
-d3.json("flare.json", function(error, root) {
-  if (error) throw error;
-
-  var node = div.datum(root).selectAll(".node")
-      .data(treemap.nodes)
-    .enter().append("div")
-      .attr("class", "node")
-      .call(position)
-      .style("background", function(d) { return d.children ? color(d.name) : null; })
-      .text(function(d) { return d.children ? null : d.name; });
-
-  d3.selectAll("input").on("change", function change() {
-    var value = this.value === "count"
-        ? function() { return 1; }
-        : function(d) { return d.size; };
-
-    node
-        .data(treemap.value(value).nodes)
-      .transition()
-        .duration(1500)
-        .call(position);
-  });
-});
-
-function position() {
-  this.style("left", function(d) { return d.x + "px"; })
-      .style("top", function(d) { return d.y + "px"; })
-      .style("width", function(d) { return Math.max(0, d.dx - 1) + "px"; })
-      .style("height", function(d) { return Math.max(0, d.dy - 1) + "px"; });
-}
-</script>
+<h1>TreeMap Demo</h1>
+<h3>Sorted Order</h3>
+<form>
+	<label><input type="radio" name="mode" value="size" checked />Size</label>
+	<label><input type="radio" name="mode" value="count" />Count</label>
+</form>
+<h3>Sticky <button> Change </button></h3>
+	<script type="text/javascript" src="//d3js.org/d3.v3.min.js"></script>
+	<script type="text/javascript">
+		//Treemap subdivide rectangle into many small subrectangle. The layout uses color to encode different nodes. Those nodes who share the same parent node are encoded by the same color.
+		var w = window.screen.width - 20,
+			h = 400,
+			isSticky = true;
+		//Initialize treemap layout function.
+		var treemap = d3.layout.treemap()
+			.size([w, h])
+			//Keep nodes stay relative place during transition.
+			.sticky(true)
+			.value(function(d) { return d.size; });
+		//Set up svg container.
+		var mySvg = d3.select('body')
+			.append('svg')
+			.attr({
+				width: w,
+				height: h,
+			});
+		//Easy color accessible via 20-step scale.
+		var colors = d3.scale.category20c();
+		//Load flare.json which is hierarchical data.
+		d3.json('flare.json', function(error, root) {
+			if(error) throw error;
+			//Generate nodes via treemap layout function.
+			var nodes = treemap.nodes(root);
+			//Draw nodes through svg elements.
+			var rects = mySvg.selectAll('rect')
+				.data(nodes)
+				.enter().append('rect')
+				.attr({
+					x: function(d) { return d.x; },
+					y: function(d) { return d.y; },
+					width: function(d) { return d.dx; },
+					height: function(d) { return d.dy; },
+				})
+				.attr('transform', 'translate(10, 10)')
+				//Set color of each node via its name.
+				.attr('fill', function(d) {
+					return colors(d.name);
+				})
+				//Set opacity of each node by criteria that whether it's leaf node.
+				.attr("fill-opacity", function(d) {
+					return d.children ? 1 : 0;
+				})
+				.attr('stroke', 'white');
+			//Change layout when input changed.
+			d3.selectAll('input').on('change', function() {
+					//Reset value when input value changed.
+					var value = this.value === "count"
+						? function() { return 1; }
+						: function(d) { return d.size; };
+					//Reset noides and rects laterly.
+					nodes = treemap.value(value).nodes(root);
+					d3.selectAll('rect')
+						.data(nodes)
+						.transition()
+						.duration(500)
+						.attr({
+							x: function(d) { return d.x; },
+							y: function(d) { return d.y; },
+							width: function(d) { return d.dx; },
+							height: function(d) { return d.dy; },
+						})
+						.attr('fill', function(d) { return colors(d.name); })
+						.attr('fill-opacity', function(d) {
+							return d.children ? 1 : 0;
+						});
+				});	
+			//Set sticky variable according to user's choice.
+			d3.selectAll('button').on('click', function() {
+				if(isSticky){
+					treemap.sticky(true);
+					isSticky = false;
+				} else {
+					treemap.sticky(false);
+					isSticky = true;
+				}
+			});			
+		});
+	</script>
 </body>
 </html>
