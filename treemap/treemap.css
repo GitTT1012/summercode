@@ -1,0 +1,5 @@
+.node{
+    overflow:hidden;
+    position:absolute;
+    border: 1px solid white;
+}
